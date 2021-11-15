@@ -3,11 +3,9 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 '''
-
 RESTful Python API to D-ZONE DNS Firewall
 
 ToDo look at request_oauth 
-
 '''
 
 
