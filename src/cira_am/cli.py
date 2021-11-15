@@ -72,23 +72,7 @@ number = argument(
     callback=validate_value
 )
 
-@run.command()
-@pass_context
-@fqdn
-@profile
-def add(ctx, fqdn, profile):
-    if ctx.obj['DEBUG']:
-        click.echo(' adding fqdn: {} to profile: {}\n'.format(fqdn, profile))
-    util.add_url(fqdn, profile)
 
-@run.command()
-@pass_context
-@fqdn
-@profile
-def delete(ctx, fqdn, profile):
-    if ctx.obj['DEBUG']:
-        click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
-    util.del_url(fqdn, profile)
     
 @run.command()
 @pass_context
@@ -99,7 +83,9 @@ def delete(ctx, fqdn, profile):
 @option( '--search', help='Search for a profile by substring')
 @option( '--byid', help='Search for a profile by ID number')
 @option( '--name2id', help='Helper function to find a profile number')
-def profiles(ctx, view, search, byid, name2id):
+@option( '--add', type=(str, str), help='Add fqdn to profile')
+@option( '--delete', type=(str, str), help='Remove fqdn from profile')
+def profiles(ctx, view, search, byid, name2id, add, delete):
         if view:
             if config.Debug:
                 click.echo(' listing all profiles\n')
@@ -120,6 +106,16 @@ def profiles(ctx, view, search, byid, name2id):
                 click.echo(' searching for profile id for name {}\n'.format(name2id))
             pid = util.profile_name_to_id(name2id)
             print(pid)
+        elif add:
+            (fqdn, profile) = add
+            if ctx.obj['DEBUG']:
+                click.echo(' adding fqdn: {} to profile: {}\n'.format(fqdn, profile))
+            util.add_url(fqdn, profile)
+        elif delete:
+            (fqdn, profile) = delete
+            if ctx.obj['DEBUG']:
+                click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
+            util.del_url(fqdn, profile)
 
 @run.command()
 @pass_context
