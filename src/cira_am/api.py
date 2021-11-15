@@ -6,23 +6,32 @@
 
 RESTful Python API to D-ZONE DNS Firewall
 
+ToDo look at request_oauth 
+
 '''
 
-import os
-import sys
+
 import json
+import os
 import requests
+import sys
 
 from pprint import pprint
+from cira_am import config
 
-Debug = 0
-Debug = 1
-
-
-Auth_Header = {'Content-Type': 'application/json'}
-
-BaseURL = "https://firewall-api.d-zone.ca"
-BaseAuthURL = "https://firewall-auth.d-zone.ca"
+def generic_request(method, url, headers={}, params={}, data={}):
+    fn = 'generic_request'
+    resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
+    status_code = resp.status_code
+    if status_code == requests.codes.ok:
+        return resp.json()
+    else:
+            print('func: {} https error code: {}'.format(fn, status_code))
+            print('URL: ', resp.url)
+            print('Reason: ', resp.reason)
+            print('Body: ', resp.request.body)
+            print('Request Text: ', resp.text)
+            exit()
 
 '''
 
@@ -33,39 +42,14 @@ curl -X POST \
         username=<username>& \
         password=<user password>&  \
         totp=<one time code>" \
-    https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token
+https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token
 
 resp =
 {
-"access_token":
-    "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqMDdsUnhMYXp
-    jaktyTS1QcjMtV0JrS2l4bzZ3bFpmV2pVUXhGUHB6OFNjIn0.eyJleHAiOjE2MzY0ODM3NzgsImlhdCI
-    6MTYzNjQ4MzQ3OCwianRpIjoiYTg5MDliYzctMmQwMy00ZWZiLThmOTAtYWJhNjVhYTk4YWNjIiwiaXN
-    zIjoiaHR0cHM6Ly9maXJld2FsbC1hdXRoLmQtem9uZS5jYS9hdXRoL3JlYWxtcy9ELVpvbmVGaXJlV2F
-    sbCIsImF1ZCI6ImFjY291bnQiLCJzdWIiOiJmOGNmMTNjNS01YzhmLTQ0NGQtYTMxNy05MWYzYjE0MmE
-    xN2MiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJ1bml2ZXJzaXR5IG9mIHRvcm9udG8iLCJzZXNzaW9uX3N
-    0YXRlIjoiMGU4MmEzZTYtMTE2MC00MmM1LWI3ZDAtODI3MWUzMjc4MmUzIiwiYWNyIjoiMSIsInJlYWx
-    tX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwicmV
-    hZC1vbmx5IiwiZnVsbC1hY2Nlc3MiXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGV
-    zIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX1
-    9LCJzY29wZSI6IkN1c3RvbWVyX0FQSV9DbGllbnRfVGVtcGxhdGUiLCJ1aWQiOiJ1bml2ZXJzaXR5IG9
-    mIHRvcm9udG8ifQ.Fa1ZazjoYEC8mGcfj7QiIpDekRx02USeGP3DIgLo9wjCB2kslVCSeZOW7BUuTaK8
-    _7FeikT6lkPqV45xoOtJhE1O0ck6NRMgAdMNL1ffz5tGc8jTi3kYtrgVfoOTPtX-ES0HmvO5Qpkvmqws
-    vKR6VmvQ2ys86gxCZ9Tmqae8urOdsHHdjO_Rzjgxk6mxdntFAapsIFChRoOJpLMEkK9KRA7l4W6egmTT
-    sUmNJS1rV7vg5Akgnwl0Q9K6dbkUilIW74NyMtJlTUR3x6NSSuGs_VXcVbvFi0GM1eOYMQ6UEg9beAWo
-    wrpMLyhcpi2gAd_XQpePk0HJQDYMsJM2eiNQDQ",
+"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqMD...",
 "expires_in": 300,
 "refresh_expires_in": 1800,
-"refresh_token":
-    "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI4YWQ0Zjgw
-    OS00MTkyLTQ0YjgtYmMyNi1kMjc3NmU3MTA1NDEifQ.eyJleHAiOjE2MzY0ODUyNzgsImlhdCI6MTYzN
-    jQ4MzQ3OCwianRpIjoiOTI4YjdkMzktNWIwOS00ODkwLTg4NGYtY2UyNTc2NjVhZmZkIiwiaXNzIjoia
-    HR0cHM6Ly9maXJld2FsbC1hdXRoLmQtem9uZS5jYS9hdXRoL3JlYWxtcy9ELVpvbmVGaXJlV2FsbCIsI
-    mF1ZCI6Imh0dHBzOi8vZmlyZXdhbGwtYXV0aC5kLXpvbmUuY2EvYXV0aC9yZWFsbXMvRC1ab25lRmlyZ
-    VdhbGwiLCJzdWIiOiJmOGNmMTNjNS01YzhmLTQ0NGQtYTMxNy05MWYzYjE0MmExN2MiLCJ0eXAiOiJSZ
-    WZyZXNoIiwiYXpwIjoidW5pdmVyc2l0eSBvZiB0b3JvbnRvIiwic2Vzc2lvbl9zdGF0ZSI6IjBlODJhM
-    2U2LTExNjAtNDJjNS1iN2QwLTgyNzFlMzI3ODJlMyIsInNjb3BlIjoiQ3VzdG9tZXJfQVBJX0NsaWVud
-    F9UZW1wbGF0ZSJ9.5f965evRaT-fkTkLmrrcAeTCzfJ1f2hK3cNpfn_lgh8",
+"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI4YW...",
 "token_type":"Bearer",
 "not-before-policy":0,
 "session_state":"0e82a3e6-1160-42c5-b7d0-8271e32782e3",
@@ -74,70 +58,128 @@ resp =
 
 '''
 
-def dnsfirewall_init():
-    global expiry_ttl, refresh_tok
-    global Auth_Header
+def fetch_tokens(creds):
+    fn = 'fetch_tokens'
+    URL = 'https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token'
 
-    uname = os.environ['CLIENT_UID']
-    pw = os.environ['CLIENT_PW']
-    client_id = os.environ['CLIENT_ID']
-    secret_key = os.environ['SECRET_KEY']
-
-    URL = BaseAuthURL + '/auth/realms/D-ZoneFireWall/protocol/openid-connect/token/'
-
-    header = { 'Content-Type': 'application/json' }
-
-    creds = {
-        'client_id': client_id,
-        'client_secret': secret_key,
-        'grant_type': 'password',
-        'username': uname,
-        'password': pw,
-    }
-
-    req = requests.post(URL, data=creds)
-    vals = json.loads(req.text)
-
-    access_tok = vals['access_token']
-    refresh_tok = vals['refresh_token']
-    tok_lifetime = vals['expires_in']
-    refresh_tok_lifetime = vals['refresh_expires_in'],
-    tok_type = vals['token_type']
-    not_before_policy = vals['not-before-policy']
-    session_state = vals['session_state']
-    refresh_tok = vals['refresh_token']
-    scope = vals['scope']
-    Auth_Header['Authorization'] =  tok_type + ' ' + access_tok
-    return access_tok
-
-def get_threatfeeds():
-    URL = BaseURL + '/threatfeeds'
-    req = requests.get(URL, headers=Auth_Header)
-    vals = json.loads(req.text)
-    pprint(vals)
+    vals = generic_request('POST', URL, data=creds)
+#   resp = requests.post(URL,  data=creds)
+#   vals = resp.json()
     return vals
 
+# Threat Feeds Section
+
 '''
+
+GET /threatfeeds - params {}
 
 JSON response:
 
-{
-'total': 1,
-'limit': 1,
-'content': [
-    {'name': 'sb-data-prot',
-    'description': 'Information Security'
-    }]
-}
+    [
+      {
+        "id": 0,
+        "name": "string",
+        "description": "string",
+        "defaultEnable": true
+      }
+    ]
 
 '''
 
+def get_threatfeeds():
+    fn = 'get_threatfeeds'
+    URL = config.BaseURL + '/threatfeeds'
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))
+    return vals
+
+# Customer Account Information
+
+'''
+
+GET /customers  Search for Customer Information
+
+Parameters:
+
+    type string Customer type one of ADMIN, RESELLER, STANDARD
+    name string Customer name
+    apiAccess boolean Customer API access feature enabled or not
+    status string Customer status  one of ACTIVE, TRIAL, COMPLIMENTARY, TO_BE_DISABLED
+    sortColumn string Sort by column (name, type)
+    sortOrder string Sorting order (asc, desc)
+    pageSize integer($int32) Number of results per page
+    page integer($int32) Page number
+
+JSON Response
+
+    {
+      "hasNext": true,
+      "hasPrevious": true,
+      "page": 0,
+      "items": [
+        {}
+      ],
+      "totalRowCount": 0,
+      "totalPageCount": 0,
+      "currentRowCount": 0
+    }
+
+Items data structure:
+
+id    	integer($int64) The unique identifier in the system for the entity
+name    string Customer name
+type    string Type of customer
+Enum: Array [ 3 ]
+parentCustomerPkid    integer($int64) Optional reseller id indicating if the customer was created by a reseller customer
+parentCustomerName    string Optional reseller name indicating if the customer belong to a parent reseller customer
+networkUsers    integer($int32) Number of network users a customer has
+wifiPoints    integer($int32) Number of WiFi access points a customer has
+status    string Customer's status, ie. Trial/Active
+Enum: Array [ 4 ]
+statusSince    string($date-time) Date since last status update
+trafficCount    integer($int64) Daily traffic count in QPS
+segmentPkid    integer($int64) Pkid of segment that customer belongs to
+managed    boolean Flag to indicate if the customer is managed by service provider
+features
+
+
+'''
+
+def search_customers(name):
+    fn = 'search_customers'
+    URL = config.BaseURL + '/customers'
+    params = {
+        'type': 'STANDARD',
+        'name': 'university of toronto'
+    }
+    resp = requests.get(URL, headers=config.AuthHeader, params=params) 
+    vals = resp.json()
+#   vals = generic_request('GET', URL, headers=config.AuthHeader, params=params)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))
+    return vals
+
+def get_customer_by_id(id):
+    fn = 'get_customer_by_id'
+    URL = config.BaseURL + '/customers/' + str(id)
+#   vals = generic_request('GET', URL, headers=config.AuthHeader)
+    resp = requests.get(URL, headers=config.GetAuthHeader)
+    vals = resp.json()
+    if config.Debug:
+        print('func: {} header used: {}'.format(fn, config.GetAuthHeader))
+        print('func: {} URL used: {}'.format(fn, resp.url))
+        print('func: {} Response text: {}'.format(fn, resp.text))
+        print('func: {} return data: {}'.format(fn, vals))
+    return vals
+
 def domainlookup(node):
-    URL = BaseURL + '/domainlookup'
+    fn = 'domainlookup'
+    URL = config.BaseURL + '/domainlookup'
     payload = {'node': node, 'type': 'fqdn'}
-    req = requests.post(URL, headers=Auth_Header, json=payload)
-    vals = json.loads(req.text)
-    print(vals)
+    vals = generic_request('POST', URL, payload=payload)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))
     return vals
 
 '''
@@ -162,10 +204,11 @@ JSON response:
 '''
 
 def get_account_info():
-    URL = BaseURL + '/account'
-    req = requests.get(URL, headers=Auth_Header)
-    vals = json.loads(req.text)
-    pprint(vals)
+    fn = 'get_account_info'
+    URL = config.BaseURL + '/account'
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))    
     return vals
 
 
@@ -185,11 +228,14 @@ id integer($int64) (query)
 '''
 
 def get_users():
-    URL = BaseURL + '/users'
+    fn = 'get_users'
+    URL = config.BaseURL + '/users'
 
-    req = requests.get(URL, headers=Auth_Header)
-    vals = json.loads(req.text)
-    print(vals)
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))    
+    return vals
+
 
 '''
 
@@ -253,12 +299,14 @@ JSON response:
 '''
 
 def get_blockpages():
-    URL = BaseURL + '/blockpages'
-
-    payload = {}
-    req = requests.get(URL, headers=Auth_Header, params=payload)
-    vals = json.loads(req.text)
-    print(vals)
+    fn = 'get_blockpages'
+    URL = config.BaseURL + '/blockpages'
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))    
+    return vals
+    
+# Profiles Section
 
 '''
 Get Profile Filterblocks
@@ -305,110 +353,12 @@ JSON response:
 '''
 
 def get_profiles_filterblocks():
-    URL = BaseURL + '/profiles/filterblocks'
-
-    payload = {}
-    req = requests.get(URL, headers=Auth_Header, params=payload)
-    vals = json.loads(req.text)
-    print(vals)
-
-'''
-Search Profiles
-
-GET /profiles
-Parameters:
-(All Optional)
-
-customerId integer($int64) Customer ID
-name string Profile name
-sortColumn string Sort by column (name, customerName)
-sortOrder string Sorting order (asc, desc)
-pageSize integer($int32) Number of results per page
-page integer($int32)
-
-JSON response:
-
-'''
-
-def search_profiles(name):
-    URL = BaseURL + '/profiles'
-    payload = { 'name': name }
-    req = requests.get(URL, headers=Auth_Header, params=payload)
-    vals = json.loads(req.text)
-    profile_schema = vals['items'][0]
-    return profile_schema
-
-'''
-
-Update and existing profile given a profileID and a new structure
-
-'''
-
-def put_profile(pid, data_struct):
-    URL = BaseURL + '/profiles/' + str(pid)
-    req = requests.put(URL, headers=Auth_Header, json=data_struct)
-    if not req.ok:
-        print('URL: ', req.url)
-        print('Status Code: ', req.status_code)
-        print('Reason: ', req.reason)
-        print('Orig Request: ')
-        print('Body: ', req.request.body)
-        print('Request Text: ')
-        pprint(req.text)
-        return
-    return json.loads(req.text)
-
-'''
-
-Add a URL to a Profile, referenced by Profile ID
-
-'''
-
-def add_url(pid, url):
-    orig = get_profile_by_id(pid)
-    temp = new = orig
-    new_url = {'node': url, 'type': 'naked-host-path'}
-    blacklist = temp['data']['urlFilter']['blackList']
-    blocklist = temp['data']['urlFilter']['blockList']
-    changed = False
-    if new_url not in blacklist:
-        temp['data']['urlFilter']['blackList'].append(new_url)
-        changed = True
-    if new_url not in blocklist:
-        temp['data']['urlFilter']['blockList'].append(new_url)
-        changed = True
-    if changed:
-        new = put_profile(pid, temp)
-    return new
-
-'''
-
-Profile black/block list structures
-
-            'blackList': [
-                {'node': '34as5rd6tfyg.cabanova.com', 'type': 'naked-host-path'},
-                {'node': '3ccacb54.sibforms.com', 'type': 'naked-host-path'},
-                {'node': '596808a16dec4fc39413bf34b0a70240.apm.eu-west-1.aws.cloud.es.io', 'type': 'naked-host-path'},
-                {'node': 'hmeont.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ont6933054.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ovg.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'xert543yuwwer000245.site', 'type': 'naked-host-path'}
-
-
-'''
-
-def del_url(pid, url):
-    orig = get_profile_by_id(pid)
-    staged = orig
-    blacklist = staged['data']['urlFilter']['blackList']
-    blocklist = staged['data']['urlFilter']['blockList']
-    target = {'node': url, 'type': 'naked-host-path'}
-    while target in blacklist:
-        staged['data']['urlFilter']['blackList'].remove(target)
-    while target in blocklist:
-        staged['data']['urlFilter']['blockList'].remove(target)
-    new = put_profile(pid, staged)
-    return new
+    fn = 'get_profiles_filterblocks'
+    URL = config.BaseURL + '/profiles/filterblocks'
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))    
+    return vals
 
 '''
 Get Profile by Profile ID
@@ -479,14 +429,59 @@ JSON response:
 '''
 
 def get_profile_by_id(pid):
-    URL = BaseURL + '/profiles/' + str(pid)
-    payload = {}
-    req = requests.get(URL, headers=Auth_Header, params=payload)
-    vals = json.loads(req.text)
-    if Debug:
-        pprint(vals)
+    fn = 'get_profile_by_id'
+    URL = config.BaseURL + '/profiles/' + str(pid)
+#    resp = requests.get(URL, headers=config.AuthHeader)
+#    vals = resp.json()
+    vals = generic_request('GET', URL, headers=config.AuthHeader)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, pprint(vals)))   
     return vals
+    
+'''
 
+Update and existing profile given a profileID and a new structure
+
+'''
+
+def put_profile(pid, data_struct):
+    fn = 'put_profile'
+    URL = config.BaseURL + '/profiles/' + str(pid)
+    payload = json.dumps(data_struct)
+    vals = generic_request('PUT', URL, headers=config.AuthHeader, data=payload)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))
+    return vals    
+
+
+
+'''
+Search Profiles
+
+GET /profiles
+Parameters:
+(All Optional)
+
+customerId integer($int64) Customer ID
+name string Profile name
+sortColumn string Sort by column (name, customerName)
+sortOrder string Sorting order (asc, desc)
+pageSize integer($int32) Number of results per page
+page integer($int32)
+
+JSON response:
+
+'''
+
+def search_profiles(name):
+    fn = 'search_profiles'
+    URL = config.BaseURL + '/profiles'
+
+    vals = generic_request('GET', URL, headers=config.AuthHeader, params={'name': name})
+    profile_schema = vals['items'][0]
+    if config.Debug:
+        print('func: {} returning'.format(fn))    
+    return vals['items']
 
 '''
 items is a list of dictionares of networks
@@ -595,21 +590,18 @@ items is a list of dictionares of networks
 
 
 def get_networks(network_id=None, customer_id=None, net_name=None):
-    URL = BaseURL + '/networks'
-
+    fn = 'get_networks'
+    URL = config.BaseURL + '/networks'
     payload = {}
-
     if network_id:
         URL += '/' + str(network_id)
         payload['id'] = network_id
-
     if net_name:
         payload['name'] = str(net_name)
-
-    print(payload)
-    req = requests.get(URL, headers=Auth_Header, params=payload)
-    vals = json.loads(req.text)
-    print(vals)
+    vals = generic_request('GET', URL, headers=config.AuthHeader, params=payload)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))   
+    return vals
 
 '''
 returns a list of Time Zones
@@ -624,351 +616,11 @@ rica/Dakar', 'Africa/Dar_es_Salaam', 'Africa/Djibouti', 'Africa/Douala', 'Africa
 '''
 
 def get_timezones():
-    URL = BaseURL + '/networks/timezones'
-
-    req = requests.get(URL, headers=Auth_Header)
-    vals = json.loads(req.text)
-    print(vals)
-
-'''
-Provisioning Events
-
-JSON representation of an Event:
-
-{
-    "id": 68,
-    "entityType": "ZONE",
-    "operation": "CREATE",
-    "status": "SUCCESS",
-    "customername": "CIRA",
-    "userName": "cira_full_access",
-    "dateCreated": 1425922462487,
-    "lastUpdated": 1425922468970,
-    "steps": [ ...... ],
-    "targetEntityName": "april14test.ca.",
-    "targetEntityCustomerName": "CIRA"
-}
-
-Field Definitions:
-
-id: The internal identifier used to identify a provisioning event.
-    Generated by system when provisioning operation performed.
-
-entityType: The D-Zone Entity Type which the provisioning operation
-            was applied to.  It is one of:
-            "ZONE", "MASTER_NAME_ SERVER" and "SIGNATURE".
-
-operation: The operation performed by this event is one of:
-            "CREATE", "UPDATE" and "DELETE".
-
-status: The latest status of the event and it is one of "PENDING",
-"IN_PROCESS", "SUCCESS" and "FAILED".
-
-customerName: The name of the customer who performed the operation.
-
-username: The username of the user who performed the operation
-
-dateCreated: The timestamp when the operation performed
-             in format of date format is: dd/MM/yyyy HH:mm:ss
-
-lastUpdated: The timestamp when the operation event last updated
-             in format of date format is dd/MM/yyyy HH:mm:ss
-
-steps: A list of provisioning EventSteps associated with the operation
-
-targetEntityName: The name of entity which the provisioning operation
-                  was applied to.
-
-targetEntityCustomerName: The customer which the target entity belongs to.
-
-
-EventStep Object:
-{
-    "id": 2035,
-    "description": "provisioning uncompleted",
-    "dateCreated": 1427901124418
-}
-
-Field Descriptions:
-
-id: The internal identifier used to identify a provisioning event step.
-    Generated by system when provisioning oper- ation step executed.
-
-description: A brief summery describing the event step including
-             the request parameters.
-
-dateCreated: The timestamp when the event step executed.
-
-
-ProvisioningEvent Search Result:
-
-{
-    "hasNext": false,
-    "hasPrevious": false,
-    "page": 0,
-    "items": [ ........],
-    "totalRowCount": 7,
-    "totalPageCount": 1,
-    "currentRowCount": 7
-}
-
-Field Descriptions:
-
-    hasNext: Boolean if there are more pages of results
-    hasPrevious: Boolean if there were more pages before results
-    Page: the Number of the page returned
-    totalPageCount: Total number of pages for the entire result
-    currentRowCount: Numberof items returned by the search
-    items: the list of dictionary items returned
-
-Functions:
-
-GET:
-
-api.d-zone.ca/provisioningevents?
-params:
-entityType=&entityId=&operation=&status=&username=&startDate=&endDate=
-&targetEntityName=&page=&pageSize
-
-Endpoint used to search D-Zone provisioning events generated by
-the users customer during D-Zone provisioning operation.
-Returns the provisioning event search results.
-
-
-Query Parameters:
-
-entityType: The D-Zone entity type on which the operations were applied to.
-            It is one of "zones", "masters" and "signatures".
-entityId: The id of the entity on which the operations were applied to.
-           If it is specified the entityType has to be specified as well.
-targetEntityName: The entity name which the provisioning operations
-                  were applied to.
-operation: The provisioning operation performed.
-           It is one of "ceate", "update" and "delete".
-status: The latest provisioning status being searched.
-        It is one of "pending", "in_process", "success" and "failed"
-username: The D-Zone user who performed the operation.
-          The search on username is partially text search.
-startDate: The earliest date and time in the time range of
-           the operation performed (inclusive).
-           It has to be in URL encoded date and time format.
-For example: 31/03/2015 12:20:30 willbe 31%2F03%2F2015+12%3A20%3A30.
-endDate: The latest date and time in the time range
-         of the operation performed (exclusive).
-         It has to be in URL encoded date and time format.
-For example: 31/03/2015 12:20:30 will be: 31%2F03%2F2015+12%3A20%3A30
-
-'''
-
-def test_functions():
-
-    dnsfirewall_init()
-#    prof = add_url(14739, 'www.quist.ca')
-#    print('after add')
-#    pprint(prof)
-    print('before')
-    prof = get_profile_by_id(14739)
-    pprint(prof)
-#   prof = add_url(14739, 'www.quist.ca')
-    prof = del_url(14739, 'www.quist.ca')
-    print('after')
-    pprint(prof)
-    exit()
-# working
-    get_account_info()
-    get_timezones()
-    get_networks(net_name='dns8')
-    get_threatfeeds()
-    domainlookup('cira.ca')
-    get_blockpages()
-    get_profiles_filterblocks()
-    search_profiles('dns1')
-    get_profile_by_id(14739)
-#    prof = del_url(14739, 'www.quist.ca')
-# still broken
-
-    vals = get_zoneowners()
-    pprint(vals)
-    print
-
-    zone_id = name2id_zone(zone)
-    print(zone, zone_id)
-
-    vals = get_zone_info(zone_id)
-    pprint(vals)
-    print
-
-    sys.exit()
-
-    vals = create_zone(zone, ['ans1', 'ans2'])
-    pprint(vals)
-    print
-
-    vals = delete_zone(zone)
-    pprint(vals)
-    print
-
-    sys.exit()
-
-# vals = get_zones()
-# pprint(vals[1:10])
-    zone_id = 427
-    zone = 'test.uoft.ca'
-    vals = get_zone_info(zone_id)
-    pprint(vals)
-
-    print('Zone ID:', zone_id, 'Zone Name:', id2name_zone(zone_id))
-
-    print('Zone Name:', zone, 'Zone ID:', name2id_zone(zone))
-
-    vals = get_servicetypes()
-    pprint(vals)
-
-    vals = get_servicetype_info(2)
-    pprint(vals)
-
-    zone = 'gtanet.ca.'
-    zone = 'test.utoronto.ca.'
-
-    vals = get_zone_info(zone)
-    pprint(vals)
-
-    print('get_zones:')
-    vals = get_zones()
-    pprint(vals[0:10])
-
-    vals = get_provisioning_events()
-    pprint(vals)
-
-    vals = get_algorithms()
-    pprint(vals)
-
-    val = get_masters()
-    pprint(val)
-    print
-
-    vals = get_master_ids()
-    pprint(vals)
-    print
-
-    for i in master_ids:
-        print(id2name_master(i))
-        vals = get_master_info(i)
-        pprint(vals)
-    print
-
-    val = get_master_info(1656)
-    pprint(val)
-
-    id = 764
-    val = id2name_zoneowner(id)
-    print(id, val)
-
-    name = 'russ'
-    val = name2id_zoneowner(name)
-    print(name, val)
-
-    name = 'uoft'
-    val = name2id_zoneowner(name)
-    print(name, val)
-
-    vals = create_zoneowner('russ')
-    pprint(vals)
-    print
-
-    vals = get_zoneowners('')
-    pprint(vals)
-    print
-
-    vals = get_zoneowners('uoft')
-    pprint(vals)
-    print
-
-    vals = get_zoneowner(name2id_zoneowner('russ'))
-    pprint(vals)
-    print
-
-    vals = create_zoneowner('bozo')
-    pprint(vals)
-    print
-
-    vals = get_zoneowners('')
-    pprint(vals)
-    print
-
-    owner_obj = {
-        'name': 'ralph',
-        'id': name2id_zoneowner('bozo'),
-    }
-
-    vals = update_zoneowner(owner_obj)
-    pprint(vals)
-    print
-
-    vals = get_zoneowners('')
-    pprint(vals)
-    print
-
-    vals = delete_zoneowner(name2id_zoneowner('ralph'))
-    pprint(vals)
-    print
-
-    vals = get_zoneowners('')
-    pprint(vals)
-    print
-
-    print('get_algorithms:')
-    algs = get_algorithms()
-    pprint(algs)
-
-    print('get_provisioning_events')
-    get_provisioning_events()
-    print
-
-    print('get_masters:')
-    masters = get_masters()
-    pprint(masters)
-    print
-
-    sys.exit()
-
-    print('get_zoneowners:')
-    zoneowners = get_zoneowners()
-    pprint(zoneowners)
-    print
-
-    print('get_zoneowner')
-    zoneowner = get_zoneowner(764)
-    pprint(zoneowner)
-    print
-
-    print('get_servicetypes:')
-    vals = get_servicetypes()
-    pprint(vals)
-    print
-
-    id = get_servicetype_id()
-    print('get_servicetype_id: ', id)
-    print
-
-    print('get_servicetype_info for:', id)
-    vals = get_servicetype_info(id)
-    pprint(vals)
-    print
-
-#    print('delete zone')
-#    vals = delete_zone(zone)
-#    pprint(vals)
-
-#    print('create zone:', zone)
-#    vals = create_zone(zone)
-#    print(vals)
-
-
-def main():
-    test_functions()
-    sys.exit()
-
-
-if __name__ == "__main__":
-    main()
+    fn = 'get_timezones'
+    URL = config.BaseURL + '/networks/timezones'
+
+    vals = generic_request('GET', URL)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))   
+    return vals
+    
