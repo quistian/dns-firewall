@@ -76,43 +76,39 @@ number = argument(
     
 @run.command()
 @pass_context
-@option( '-V', '--list', '--view', 'view',
-    is_flag=True,
-    help='View/List all the profiles'
-)
-@option( '--search', help='Search for a profile by substring')
-@option( '--byid', help='Search for a profile by ID number')
-@option( '--name2id', help='Helper function to find a profile number')
-@option( '--add', type=(str, str), help='Add fqdn to profile')
-@option( '--delete', type=(str, str), help='Remove fqdn from profile')
-def profiles(ctx, view, search, byid, name2id, add, delete):
+@option( '-l', '--list', '--view', 'view', is_flag=True, help='View/List all the profiles')
+@option( '-s', '--search', help='Search for a profile by substring')
+@option( '--view-by-id', 'pid',  help='view a profile by ID number')
+@option( '--name-to-id', 'name2id',  help='Helper function to find a profile number')
+@option( '--add-url', 'addurl', type=(str, str), help='Add fqdn to profile')
+@option( '--del-url', 'delurl', type=(str, str), help='Remove fqdn from profile')
+def profiles(ctx, view, search, pid, name2id, addurl, delurl):
         if view:
-            if config.Debug:
-                click.echo(' listing all profiles\n')
             profs = api.search_profiles('')
-            pprint(profs)
-        elif byid:
-            if config.Debug:
-                click.echo(' listing profile number: {}\n'.format(byid))
-            prof = api.get_profile_by_id(byid)
-            pprint(prof)
+            for prof in profs['items']:
+                util.pretty_print(prof)
+        elif pid:
+            prof = api.get_profile_by_id(pid)
+            util.pretty_print(prof)
         elif search:
             if config.Debug:
                 click.echo(' searching for profiles contaning {}\n'.format(search))
             profs = api.search_profiles(search)
-            pprint(profs)
+            for prof in profs['items']:
+                util.pretty_print(prof)
         elif name2id:
             if config.Debug:
                 click.echo(' searching for profile id for name {}\n'.format(name2id))
-            pid = util.profile_name_to_id(name2id)
-            print(pid)
-        elif add:
-            (fqdn, profile) = add
+            ids = util.profile_name_to_id(name2id)
+            l = len(ids)
+            click.echo('Profile Ids whose Profile names match {}:  {}'.format(name2id, ids))
+        elif addurl:
+            (fqdn, profile) = addurl
             if ctx.obj['DEBUG']:
                 click.echo(' adding fqdn: {} to profile: {}\n'.format(fqdn, profile))
             util.add_url(fqdn, profile)
-        elif delete:
-            (fqdn, profile) = delete
+        elif delurl:
+            (fqdn, profile) = delurl
             if ctx.obj['DEBUG']:
                 click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
             util.del_url(fqdn, profile)

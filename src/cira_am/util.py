@@ -53,18 +53,58 @@ def dnsfirewall_init():
 Add a URL to a Profile, blacklist and blocklist referenced by Profile Name
 '''
 
-def add_url(url, profile):
-	pid = profile_name_to_id(profile)
-	add_url_by_pid(url, pid)
-	
+def add_url(url, name):
+    profs = api.search_profiles(name)
+    items = profs['items']
+    l = len(items)
+    if l == 1:
+# search_profiles data has domain override off and omits feedSubscriptions
+# hence the call to get_profile_by_id
+        pid = items[0]['id']
+        item = api.get_profile_by_id(pid)
+        pname = item['name']
+        node = {'node': url, 'type': 'naked-host-path'}
+        if node not in item['data']['urlFilter']['blackList']:
+            item['data']['urlFilter']['blackList'].append(node)
+            item['data']['urlFilter']['blockList'].append(node)
+            new = api.put_profile(pid, item)
+            print('Added {} to {}'.format(url, pname))
+        else:
+            print('{} blocklst already contains {}'.format(pname,url))
+    elif l == 0:
+        print('There were no profile names matching: {}'.format(prof_name))
+    else:
+        print('There were more than 1 profile names which  matched: {}'.format(prof_name))
+    
 '''
 Remove a URL from a Profile, blacklist and blocklist referenced by Profile Name
 '''
 
-def del_url(url, profile):
-	pid = profile_name_to_id(profile)
-	del_url_by_pid(url, pid)
-
+def del_url(url, name):
+    profs = api.search_profiles(name)
+    items = profs['items']
+    l = len(items)
+    if l == 1:
+# search_profiles data has domain override off and omits feedSubscriptions
+# hence the call to get_profile_by_id
+        pid = items[0]['id']
+        item = api.get_profile_by_id(pid)
+        pname = item['name']
+        node = {'node': url, 'type': 'naked-host-path'}
+        if node not in item['data']['urlFilter']['blackList']:
+            print('{} blocklst does not contain {}'.format(pname,url))
+        else:
+            while node in item['data']['urlFilter']['blackList']:
+                item['data']['urlFilter']['blackList'].remove(node)
+            while node in item['data']['urlFilter']['blockList']:
+                item['data']['urlFilter']['blockList'].remove(node)
+            new = api.put_profile(pid, item)
+            print('Deleted {} from {} blocklist'.format(url, pname))
+    elif l == 0:
+        print('There were no profile names matching: {}'.format(prof_name))
+    else:
+        print('There were more than 1 profile names which  matched: {}'.format(prof_name))
+    
 '''
 Add a URL to a Profile, blacklist and blocklist referenced by Profile ID
 '''
@@ -84,18 +124,20 @@ def add_url_by_pid(url, pid):
         changed = True
     if changed:
         new = api.put_profile(pid, temp)
-    return new
+        return new
+    else:
+        return None
 
 '''
 Profile black/block list structures
 'blackList': [
-	{'node': '34as5rd6tfyg.cabanova.com', 'type': 'naked-host-path'},
-	{'node': '3ccacb54.sibforms.com', 'type': 'naked-host-path'},
-	{'node': '596808a16dec4fc39413bf34b0a70240.apm.eu-west-1.aws.cloud.es.io', 'type': 'naked-host-path'},
-	{'node': 'hmeont.cabanova.com', 'type': 'naked-host-path'},
-	{'node': 'ont6933054.cabanova.com', 'type': 'naked-host-path'},
-	{'node': 'ovg.cabanova.com', 'type': 'naked-host-path'},
-	{'node': 'xert543yuwwer000245.site', 'type': 'naked-host-path'}
+    {'node': '34as5rd6tfyg.cabanova.com', 'type': 'naked-host-path'},
+    {'node': '3ccacb54.sibforms.com', 'type': 'naked-host-path'},
+    {'node': '596808a16dec4fc39413bf34b0a70240.apm.eu-west-1.aws.cloud.es.io', 'type': 'naked-host-path'},
+    {'node': 'hmeont.cabanova.com', 'type': 'naked-host-path'},
+    {'node': 'ont6933054.cabanova.com', 'type': 'naked-host-path'},
+    {'node': 'ovg.cabanova.com', 'type': 'naked-host-path'},
+    {'node': 'xert543yuwwer000245.site', 'type': 'naked-host-path'}
 '''
 
 def del_url_by_pid(url, pid):
@@ -113,7 +155,29 @@ def del_url_by_pid(url, pid):
 
 def profile_name_to_id(name):
     prof = api.search_profiles(name)
-    return prof[0]['id']
+    items = prof['items']
+    pids = []
+    for item in items:
+        pids.append(item['id'])
+    return pids
+
+def profile_exists(pid):
+    prof = api.get_profile_by_id(pid)
+    if prof:
+        return True
+    else:
+        return False
+
+def pretty_print(profile):
+    name = profile['name']
+    pid = profile['id']
+    print('Profile:')
+    print('    Name: {}'.format(name))
+    print('    Id: {}'.format(pid))
+    print('    Block List:')
+    blist = profile['data']['urlFilter']['blackList']
+    for node in blist:
+        print('        {}'.format(node['node']))
 
 def test_functions():
 

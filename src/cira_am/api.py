@@ -21,17 +21,20 @@ from cira_am import config
 
 def generic_request(method, url, headers={}, params={}, data={}):
     fn = 'generic_request'
+    if config.Debug:
+        print('func: {} method: {} url: {} \n'.format(fn, method, url))
+
     resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
     status_code = resp.status_code
     if status_code == requests.codes.ok:
         return resp.json()
     else:
-            print('func: {} https error code: {}'.format(fn, status_code))
-            print('URL: ', resp.url)
-            print('Reason: ', resp.reason)
-            print('Body: ', resp.request.body)
-            print('Request Text: ', resp.text)
-            exit()
+        print('https error code: {}'.format(status_code))
+        print('URL: ', resp.url)
+        print('Reason: ', resp.reason)
+        print('Body: ', resp.request.body)
+        print('Request Text: ', resp.text)
+        return False
 
 '''
 
@@ -431,8 +434,6 @@ JSON response:
 def get_profile_by_id(pid):
     fn = 'get_profile_by_id'
     URL = config.BaseURL + '/profiles/' + str(pid)
-#    resp = requests.get(URL, headers=config.AuthHeader)
-#    vals = resp.json()
     vals = generic_request('GET', URL, headers=config.AuthHeader)
     if config.Debug:
         print('func: {} return data: {}'.format(fn, pprint(vals)))   
@@ -478,10 +479,9 @@ def search_profiles(name):
     URL = config.BaseURL + '/profiles'
 
     vals = generic_request('GET', URL, headers=config.AuthHeader, params={'name': name})
-    profile_schema = vals['items'][0]
     if config.Debug:
-        print('func: {} returning'.format(fn))    
-    return vals['items']
+        print('func: {} searching for substr {} returns {}'.format(fn, name, vals))    
+    return vals
 
 '''
 items is a list of dictionares of networks
