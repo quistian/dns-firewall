@@ -3,11 +3,17 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 
 '''
+
 RESTful Python API to D-ZONE DNS Firewall
 
-ToDo look at request_oauth 
-'''
+Schema documentation:
 
+    https://firewall-api.d-zone.ca/assets/lib/swagger-ui/index.html?url=%2Fswagger.json#/
+
+ToDo:
+    look at request_oauth 
+
+'''
 
 import json
 import os
@@ -312,43 +318,17 @@ def get_blockpages():
 '''
 Get Profile Filterblocks
 
-GET params -> None
+method -> GET
+path -> /profiles/filterblocks
+params -> None
 
 JSON response:
 
 {
-'all':
-    ['sb-crime', 'sb-self-harm', 'sb-child-abuse', 'sb-porn',
-    'sb-cults', 'sb-nudity', 'sb-lingerie', 'sb-sex-education',
-    'sb-offensive', 'sb-hacking', 'sb-cheating', 'sb-anonymizers',
-    'sb-translate', 'sb-dating', 'sb-drugs', 'sb-alc-tob', 'sb-software',
-    'sb-p2p', 'sb-warez', 'sb-gambling', 'sb-shopping', 'sb-entertainment',
-    'sb-politics', 'sb-weapons', 'sb-violence', 'sb-hate', 'sb-webmail',
-    'sb-games', 'sb-forums', 'sb-community', 'sb-chat', 'sb-streaming',
-    'sb-ads', 'sb-arts', 'sb-business', 'sb-data-prot', 'sb-edu',
-    'sb-errors', 'sb-fashion', 'sb-food', 'sb-gov', 'sb-greet',
-    'sb-health', 'sb-images', 'sb-jobs', 'sb-money', 'sb-news',
-    'sb-nonprof', 'sb-parked', 'sb-realty', 'sb-recreation', 'sb-religion',
-    'sb-rfc1918', 'sb-search', 'sb-sports', 'sb-tech', 'sb-travel',
-    'sb-vehicles'],
-'light':
-    ['sb-self-harm', 'sb-child-abuse', 'sb-crime'],
-'medium':
-    ['sb-gambling', 'sb-hacking', 'sb-nudity',
-    'sb-drugs', 'sb-translate', 'sb-software', 'sb-offensive',
-    'sb-self-harm', 'sb-cheating', 'sb-weapons', 'sb-shopping', 'sb-cults',
-    'sb-sex-education', 'sb-p2p', 'sb-anonymizers', 'sb-porn',
-    'sb-child-abuse', 'sb-crime', 'sb-violence', 'sb-dating', 'sb-warez',
-    'sb-hate', 'sb-entertainment', 'sb-lingerie', 'sb-alc-tob',
-    'sb-politics'],
-'strict':
-    ['sb-gambling', 'sb-hacking', 'sb-nudity',
-    'sb-drugs', 'sb-translate', 'sb-software', 'sb-offensive', 'sb-webmail',
-    'sb-self-harm', 'sb-cheating', 'sb-weapons', 'sb-games', 'sb-shopping',
-    'sb-cults', 'sb-sex-education', 'sb-p2p', 'sb-anonymizers',
-    'sb-forums', 'sb-porn', 'sb-child-abuse', 'sb-crime', 'sb-violence',
-    'sb-dating', 'sb-community', 'sb-warez', 'sb-hate', 'sb-chat',
-    'sb-entertainment', 'sb-lingerie', 'sb-alc-tob', 'sb-politics']
+'all': ['sb-crime', 'sb-self-harm', 'sb-child-abuse', 'sb-porn', ... ]
+'light': ['sb-self-harm', 'sb-child-abuse', 'sb-crime'],
+'medium': ['sb-gambling', 'sb-hacking', 'sb-nudity', ... ]
+'strict': ['sb-gambling', 'sb-hacking', 'sb-nudity', ... ]
 }
 
 '''
@@ -361,11 +341,13 @@ def get_profiles_filterblocks():
         print('func: {} return data: {}'.format(fn, vals))    
     return vals
 
-'''
-Get Profile by Profile ID
 
-PATH + /{Id}
-GET -> params -> {}
+'''
+Get Profile by ID
+
+method -> GET
+path -> /profiles/{Id}
+params -> {}
 
 JSON response:
 
@@ -377,46 +359,25 @@ JSON response:
     'data': {
         'temporarilyDisabled': False,
         'internetSecurity': {
-            'safeSearchServices': {
-                'BING': False,
-                'GOOGLE': False,
-                'YOUTUBE': False
-            },
+            'safeSearchServices': { 'BING': False, 'GOOGLE': False, 'YOUTUBE': False },
             'enableMalwareProtection': True
         },
-        'webFilterLevel': {
-            'level': 'none',
-            'blockList': []
-        },
-        'internetOffSchedule': {
-            'enabled': False,
-            'schedules': []
-        },
-        'contentRestriction': {
-            'enabled': False,
-            'schedules': [],
-            'blockList': []
-        },
+        'webFilterLevel': { 'level': 'none', 'blockList': [] },
+        'internetOffSchedule': { 'enabled': False, 'schedules': [] },
+        'contentRestriction': { 'enabled': False, 'schedules': [], 'blockList': [] },
         'urlFilter': {
             'allowList': [],
             'blockList': [
                 {'node': '34as5rd6tfyg.cabanova.com', 'type': 'naked-host-path' },
                 {'node': '3ccacb54.sibforms.com', 'type': 'naked-host-path'},
-                {'node': '596808a16dec4fc39413bf34b0a70240.apm.eu-west-1.aws.cloud.es.io', 'type': 'naked-host-path'}, {'node': 'hmeont.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ont6933054.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ovg.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'xert543yuwwer000245.site', 'type': 'naked-host-path'}
+                ,,,
             ],
-            'whiteList': [],
             'blackList': [
                 {'node': '34as5rd6tfyg.cabanova.com', 'type': 'naked-host-path'},
                 {'node': '3ccacb54.sibforms.com', 'type': 'naked-host-path'},
-                {'node': '596808a16dec4fc39413bf34b0a70240.apm.eu-west-1.aws.cloud.es.io', 'type': 'naked-host-path'},
-                {'node': 'hmeont.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ont6933054.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'ovg.cabanova.com', 'type': 'naked-host-path'},
-                {'node': 'xert543yuwwer000245.site', 'type': 'naked-host-path'}
+                ...
                 ]
+            'whiteList': [],
               }
             },
     'networkIdNames': {'9904': 'dns1'},
@@ -438,8 +399,15 @@ def get_profile_by_id(pid):
     return vals
     
 '''
-
 Update and existing profile given a profileID and a new structure
+
+method -> PUT
+url -> /profiles/{id}
+body -> profile schema
+
+JSON response
+
+updated profile schema
 
 '''
 
@@ -452,23 +420,23 @@ def put_profile(pid, data_struct):
         print('func: {} return data: {}'.format(fn, vals))
     return vals    
 
-
-
 '''
 Search Profiles
 
-GET /profiles
-Parameters:
-(All Optional)
+method -> GET
+path -> //profiles
 
-customerId integer($int64) Customer ID
-name string Profile name
-sortColumn string Sort by column (name, customerName)
-sortOrder string Sorting order (asc, desc)
-pageSize integer($int32) Number of results per page
-page integer($int32)
+Parameters: (All Optional)
+    customerId integer($int64) Customer ID
+    name string Profile name
+    sortColumn string Sort by column (name, customerName)
+    sortOrder string Sorting order (asc, desc)
+    pageSize integer($int32) Number of results per page
+    page integer($int32)
 
 JSON response:
+    
+    A list, pages of profile schemas
 
 '''
 
@@ -480,6 +448,46 @@ def search_profiles(name):
     if config.Debug:
         print('func: {} searching for substr {} returns {}'.format(fn, name, vals))    
     return vals
+
+'''
+Create a new profile
+
+method -> POST
+url -> /profiles/
+params -> {}
+body -> json schema of new profile
+
+'''
+
+def create_profile(prof):
+    fn = 'create_profile'
+    URL = config.BaseURL + '/profiles'
+
+    vals = generic_request('POST', URL, headers=config.AuthHeader, data=json.dumps(prof))
+    if config.Debug:
+        print('func: {} creating profile {} returns {}'.format(fn, prof['name'], vals))    
+    return vals
+
+'''
+Delete an existing profile
+
+method -> DELETE
+url -> /profiles/id
+params -> {}
+
+Response -> https status == 204
+
+'''
+
+def delete_profile(pid):
+    fn = 'profile_delete'
+    URL = config.BaseURL + '/profiles/' + str(pid)
+    vals = generic_request('DELETE', URL, headers=config.AuthHeader)
+    if config.Debug:
+        print('func: {} deleting profile ID {} returns {}'.format(fn, pid, vals))    
+    return vals
+
+# Networks Section
 
 '''
 items is a list of dictionares of networks
@@ -510,46 +518,6 @@ items is a list of dictionares of networks
     'blockPageId': 173,
     'blockPageName': 'utoronto_blockpage-155',
     'reportEmails': None,
-    'reportFrequency': 'NEVER'
-    },
-
-    {
-    'id': 9855,
-    'name': 'dns4',
-    'subscriberId': 'dns4-d7ea98b9-2a59-4265-a5e5-d278e5292cef',
-    'timeZone': 'America/Toronto',
-    'customerId': 171,
-    'ipAddresses': [
-        {'id': 22507,
-        'address': '128.100.56.135',
-        'type': 'V4',
-        'networkId': 9855,
-        'dynamicSourceAddressId': None,
-        'childIPV4': None, 'childIPV6': None,
-        'lastChecked': None}],
-    'customerName': 'university of toronto',
-    'profileId': 14649,
-    'profileName': 'dns4-profile',
-    'blockPageId': 173,
-    'blockPageName': 'utoronto_blockpage-155',
-    'reportEmails': None,
-    'reportFrequency': 'NEVER'
-    },
-
-
-    {
-    'id': 8907,
-    'name': 'dns8',
-    'subscriberId': 'dns8-abff435d-27f6-47ca-93e7-1609ab156a3c',
-    'timeZone': 'America/Toronto',
-    'customerId': 171,
-    'ipAddresses':
-        [{'id': 20396, 'address': '128.100.102.202', 'type': 'V4', 'networkId':
-        8907, 'dynamicSourceAddressId': None, 'childIPV4': None, 'childIPV6':
-        None, 'lastChecked': None}],
-    'customerName': 'university of toronto',
-    'profileId': 13179, 'profileName': 'dns8-profile',
-    'blockPageId': 173, 'blockPageName': 'utoronto_blockpage-155', 'reportEmails': None,
     'reportFrequency': 'NEVER'
     },
 
@@ -585,7 +553,6 @@ items is a list of dictionares of networks
 
 
 '''
-
 
 def get_networks(network_id=None, customer_id=None, net_name=None):
     fn = 'get_networks'

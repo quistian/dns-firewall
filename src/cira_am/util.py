@@ -13,7 +13,38 @@ Logger.setLevel(logging.DEBUG)
 logging.basicConfig(level=logging.INFO)
 config.Logger = Logger
 
-'''Higher Level Utility CIRA DNS Firewall Functions'''
+# DNS Firewall object schemas
+
+'''
+Profile:
+
+{
+    'customerId': 171,
+    'customerName': 'university of toronto',
+    'data': {
+        'contentRestriction': {'blockList': [], 'enabled': False, 'schedules': []},
+        'internetOffSchedule': {'enabled': False, 'schedules': []},
+        'internetSecurity': {
+            'enableMalwareProtection': True,
+            'safeSearchServices': {'BING': False, 'GOOGLE': False, 'YOUTUBE': False}
+        },
+        'temporarilyDisabled': False,
+        'urlFilter': {'allowList': [], 'blackList': [], 'blockList': [], 'whiteList': []},
+        'webFilterLevel': {'blockList': [], 'level': 'none'}
+    },
+    'feedSubscriptions': [
+        {'active': True, 'threatFeedName': 'CCCS'},
+        {'active': True, 'threatFeedName': 'Cybertip'},
+        {'active': True, 'threatFeedName': 'CanSSOC'}
+    ],
+    'id': 15236,
+    'name': 'template-profile',
+    'networkIdNames': {'10213': 'template'}
+}
+
+'''
+
+# Higher Level Utility CIRA DNS Firewall Functions
 
 '''
 fetch_tokens response
@@ -153,7 +184,7 @@ def del_url_by_pid(url, pid):
     new = api.put_profile(pid, staged)
     return new
 
-def profile_name_to_id(name):
+def profile_name_to_ids(name):
     prof = api.search_profiles(name)
     items = prof['items']
     pids = []
@@ -167,6 +198,40 @@ def profile_exists(pid):
         return True
     else:
         return False
+
+def profile_create(pname):
+    toks = pname.split('-')
+    if toks[-1] != 'profile':
+        cname = pname + '-profile'
+    else:
+        cname = pname
+    ids = profile_name_to_ids(cname)
+    if len(ids):
+        print('Profile {} already exists'.format(cname))
+        prof = api.get_profile_by_id(ids[0])
+    else:
+        ids = profile_name_to_ids('template-profile')
+        prof = api.get_profile_by_id(ids[0])
+        prof['name'] = cname
+        prof['id'] = '0'
+        prof['networkIdNames'] =  {}
+        new = api.create_profile(prof)
+        if config.Debug:
+            pprint(new)
+        prof = new
+    return prof
+
+def profile_delete(pname):
+    toks = pname.split('-')
+    if toks[-1] != 'profile':
+        cname = pname + '-profile'
+    else:
+        cname = pname
+    ids = profile_name_to_ids(cname)
+    if len(ids):
+        api.delete_profile(ids[0])
+    else:
+        print('Profile {} does not exist'.format(cname))
 
 def pretty_print(profile):
     name = profile['name']

@@ -76,42 +76,51 @@ number = argument(
     
 @run.command()
 @pass_context
+
+@option( '-a', '--create', '--add', 'add',  help='Add a new profile with given name')
+@option( '-d', '--del', '--delete', 'delete',  help='Delete an existing profile matching given name')
+@option( '-D', '--del-by-id', 'delid', help='Delete an existing profile given ID number')
 @option( '-l', '--list', '--view', 'view', is_flag=True, help='View/List all the profiles')
 @option( '-s', '--search', help='Search for a profile by substring')
-@option( '--view-by-id', 'pid',  help='view a profile by ID number')
+@option( '--view-by-id', 'viewpid',  help='view a profile by ID number')
 @option( '--name-to-id', 'name2id',  help='Helper function to find a profile number')
-@option( '--add-url', 'addurl', type=(str, str), help='Add fqdn to profile')
-@option( '--del-url', 'delurl', type=(str, str), help='Remove fqdn from profile')
-def profiles(ctx, view, search, pid, name2id, addurl, delurl):
-        if view:
-            profs = api.search_profiles('')
-            for prof in profs['items']:
-                util.pretty_print(prof)
-        elif pid:
-            prof = api.get_profile_by_id(pid)
+@option( '--add-url', 'addurl', type=(str, str), help='Add a fqdn to an existing profile blocklist')
+@option( '--del-url', 'delurl', type=(str, str), help='Remove a fqdn from an existing profile blocklist')
+
+def profiles(ctx, add, delete, delid, view, search, viewpid, name2id, addurl, delurl):
+    if add:
+        util.profile_create(add)
+    elif delete:
+        util.profile_delete(delete)
+    elif view:
+        profs = api.search_profiles('')
+        for prof in profs['items']:
             util.pretty_print(prof)
-        elif search:
-            if config.Debug:
-                click.echo(' searching for profiles contaning {}\n'.format(search))
-            profs = api.search_profiles(search)
-            for prof in profs['items']:
-                util.pretty_print(prof)
-        elif name2id:
-            if config.Debug:
-                click.echo(' searching for profile id for name {}\n'.format(name2id))
-            ids = util.profile_name_to_id(name2id)
-            l = len(ids)
-            click.echo('Profile Ids whose Profile names match {}:  {}'.format(name2id, ids))
-        elif addurl:
-            (fqdn, profile) = addurl
-            if ctx.obj['DEBUG']:
-                click.echo(' adding fqdn: {} to profile: {}\n'.format(fqdn, profile))
-            util.add_url(fqdn, profile)
-        elif delurl:
-            (fqdn, profile) = delurl
-            if ctx.obj['DEBUG']:
-                click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
-            util.del_url(fqdn, profile)
+    elif viewpid:
+        prof = api.get_profile_by_id(viewpid)
+        util.pretty_print(prof)
+    elif search:
+        if config.Debug:
+            click.echo(' searching for profiles contaning {}\n'.format(search))
+        profs = api.search_profiles(search)
+        for prof in profs['items']:
+            util.pretty_print(prof)
+    elif name2id:
+        if config.Debug:
+            click.echo(' searching for profile id for name {}\n'.format(name2id))
+        ids = util.profile_name_to_ids(name2id)
+        l = len(ids)
+        click.echo('Profile Ids whose Profile names match {}:  {}'.format(name2id, ids))
+    elif addurl:
+        (fqdn, profile) = addurl
+        if ctx.obj['DEBUG']:
+            click.echo(' adding fqdn: {} to profile: {}\n'.format(fqdn, profile))
+        util.add_url(fqdn, profile)
+    elif delurl:
+        (fqdn, profile) = delurl
+        if ctx.obj['DEBUG']:
+            click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
+        util.del_url(fqdn, profile)
 
 @run.command()
 @pass_context
