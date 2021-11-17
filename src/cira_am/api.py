@@ -28,17 +28,23 @@ def generic_request(method, url, headers={}, params={}, data={}):
     if config.Debug:
         print('func: {} method: {} url: {} \n'.format(fn, method, url))
 
-    resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
-    status_code = resp.status_code
-    if status_code == requests.codes.ok:
+    try:
+        resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
+        resp.raise_for_status()
         return resp.json()
-    else:
-        print('https error code: {}'.format(status_code))
-        print('URL: ', resp.url)
-        print('Reason: ', resp.reason)
-        print('Body: ', resp.request.body)
+    except requests.exceptions.HTTPError as errh:
+        print(errh)
         print('Request Text: ', resp.text)
-        return False
+        exit()
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+        exit()
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+        exit()
+    except requests.exceptions.RequestException as err:
+        print(err)
+        exit()
 
 '''
 
@@ -412,7 +418,7 @@ updated profile schema
 '''
 
 def put_profile(pid, data_struct):
-    fn = 'put_profile'
+    fn = 'api.put_profile'
     URL = config.BaseURL + '/profiles/' + str(pid)
     payload = json.dumps(data_struct)
     vals = generic_request('PUT', URL, headers=config.AuthHeader, data=payload)
@@ -457,6 +463,8 @@ url -> /profiles/
 params -> {}
 body -> json schema of new profile
 
+A profile can be created without any networks attached
+
 '''
 
 def create_profile(prof):
@@ -490,6 +498,28 @@ def delete_profile(pid):
 # Networks Section
 
 '''
+
+Search networks for a given value
+
+method -> GET
+url -> /networks
+parameters ->
+{
+name: string Network name
+ip: string IP Address
+customerId: integer($int64) Customer ID
+parentCustomerId: integer($int64) Parent Customer ID
+time_zone: string Time Zone
+sortColumn: string Sort by column (name, customerName, profileName, blockPageName, timeZone)
+sortOrder: string Sorting order (asc, desc)
+pageSize: integer($int32) Number of results per page
+page: integer($int32) Page number
+}
+
+All optional
+
+Json response
+
 items is a list of dictionares of networks
 
 {
@@ -520,9 +550,7 @@ items is a list of dictionares of networks
     'reportEmails': None,
     'reportFrequency': 'NEVER'
     },
-
     etc...
-
     {
     'id': 10181,
     'name': 'utsc',
@@ -544,7 +572,6 @@ items is a list of dictionares of networks
     'reportEmails': None,
     'reportFrequency': 'DAILY'
     }
-
     ],
 'totalRowCount': 7,
 'totalPageCount': 1,
@@ -554,32 +581,117 @@ items is a list of dictionares of networks
 
 '''
 
-def get_networks(network_id=None, customer_id=None, net_name=None):
-    fn = 'get_networks'
+def search_networks(name=None, ip=None):
+    fn = 'api.get_networks'
     URL = config.BaseURL + '/networks'
     payload = {}
-    if network_id:
-        URL += '/' + str(network_id)
-        payload['id'] = network_id
-    if net_name:
-        payload['name'] = str(net_name)
+    if name:
+        payload['name'] = name
+    if ip:
+        payload['ip'] = ip
     vals = generic_request('GET', URL, headers=config.AuthHeader, params=payload)
+    if config.Debug:
+        print('func: {} return data:'.format(fn))
+        pprint(vals)   
+    return vals
+
+'''
+Get networks by Id
+
+method -> GET
+url -> /networks/{Id}
+params -> {}
+
+    Error if network Id does not exist:
+    https error code: 404
+    URL:  https://firewall-api.d-zone.ca/networks/101
+    Reason:  Not Found
+    Body:  None
+    Request Text:  {"errors":{"NETWORK_DOES_NOT_EXIST":null}}
+
+'''
+
+def get_network_by_id(nid):
+    fn = 'api.get_network_by_id'
+    URL = config.BaseURL + '/networks/' + str(nid)
+    vals = generic_request('GET', URL, headers=config.AuthHeader)
     if config.Debug:
         print('func: {} return data: {}'.format(fn, vals))   
     return vals
 
 '''
-returns a list of Time Zones
 
+Update a given network
+
+method -> PUT
+url -> /networks/id
+params -> {}
+body -> json network schema
+
+Response:
+    Success: https status code: 200
+    Data: json network schema of updated network
+
+'''
+
+def put_network(net_id, net_data_struct):
+    fn = 'api.put_network'
+    URL = config.BaseURL + '/networks/' + str(net_id)
+    payload = json.dumps(net_data_struct)
+    vals = generic_request('PUT', URL, headers=config.AuthHeader, data=payload)
+    if config.Debug:
+        print('func: {} return data: {}'.format(fn, vals))
+    return vals    
+
+'''
+
+Delete an existing network
+
+method -> DELETE
+url -> /networks/id
+params -> {}
+
+Response -> https status == 204
+
+'''
+
+def delete_network(netid):
+    fn = 'api.delete_network'
+    URL = config.BaseURL + '/networks/' + str(netid)
+    vals = generic_request('DELETE', URL, headers=config.AuthHeader)
+    if config.Debug:
+        print('func: {} deleting network ID {} returns {}'.format(fn, netid, vals))    
+    return vals
+
+'''
+Create a new network
+
+method -> POST
+url -> /networks/
+params -> {}
+body -> json schema of new profile
+
+https session returns status: 204 upon success
+'''
+
+def create_network(net):
+    fn = 'api.create_network'
+    URL = config.BaseURL + '/networks'
+
+    vals = generic_request('POST', URL, headers=config.AuthHeader, data=json.dumps(net))
+    if config.Debug:
+        print('func: {} creating network {} returns {}'.format(fn, net['name'], vals))    
+    return vals
+
+'''
+returns a list of Time Zones
 zones = ['Africa/Abidjan', 'Africa/Accra', 'Africa/Addis_Ababa', 'Africa/Algiers
 ', 'Africa/Asmara', 'Africa/Asmera', 'Africa/Bamako', 'Africa/Bangui', 'Africa/B
 anjul', 'Africa/Bissau', 'Africa/Blantyre', 'Africa/Brazzaville', 'Africa/Bujumb
 ura', 'Africa/Cairo', 'Africa/Casablanca', 'Africa/Ceuta', 'Africa/Conakry', 'Af
 rica/Dakar', 'Africa/Dar_es_Salaam', 'Africa/Djibouti', 'Africa/Douala', 'Africa
 /El_Aaiun', ... ]
-
 '''
-
 def get_timezones():
     fn = 'get_timezones'
     URL = config.BaseURL + '/networks/timezones'

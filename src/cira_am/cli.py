@@ -72,8 +72,6 @@ number = argument(
     callback=validate_value
 )
 
-
-    
 @run.command()
 @pass_context
 
@@ -95,16 +93,16 @@ def profiles(ctx, add, delete, delid, view, search, viewpid, name2id, addurl, de
     elif view:
         profs = api.search_profiles('')
         for prof in profs['items']:
-            util.pretty_print(prof)
+            util.profile_pretty_print(prof)
     elif viewpid:
         prof = api.get_profile_by_id(viewpid)
-        util.pretty_print(prof)
+        util.profile_pretty_print(prof)
     elif search:
         if config.Debug:
             click.echo(' searching for profiles contaning {}\n'.format(search))
         profs = api.search_profiles(search)
         for prof in profs['items']:
-            util.pretty_print(prof)
+            util.profile_pretty_print(prof)
     elif name2id:
         if config.Debug:
             click.echo(' searching for profile id for name {}\n'.format(name2id))
@@ -121,6 +119,45 @@ def profiles(ctx, add, delete, delid, view, search, viewpid, name2id, addurl, de
         if ctx.obj['DEBUG']:
             click.echo(' removing fqdn: {} from profile: {}\n'.format(fqdn, profile))
         util.del_url(fqdn, profile)
+
+@run.command()
+@pass_context
+
+@option( '-l', '--list', '--view', 'view', is_flag=True, help='View/List all networks')
+@option( '-s', '--search', help='Search for a network by substring')
+@option( '--view-by-id', 'viewnid',  help='view a network by ID number')
+@option( '--name-to-id', 'name2id',  help='List of network IDs whose name matches a string')
+@option( '--add-cidr', 'addcidr', type=(str, str), help='Add a CIDR block to an existing network')
+@option( '--del-cidr', 'delcidr', type=(str, str), help='Remove a CIDR from an existing network')
+@option( '-a', '--create', '--add', 'add',  help='Add a new network with given name')
+@option( '-d', '--del', '--delete', 'delete',  help='Delete an existing network matching given name')
+@option( '-D', '--del-by-id', 'delid', help='Delete an network given ID number')
+
+def networks(ctx, add, delete, delid, view, search, viewnid, name2id, addcidr, delcidr):
+    if view:
+        util.networks_search('')
+    elif search:
+        if ctx.obj['DEBUG']:
+            click.echo(' getting networks information matching {}'.format(name))
+        util.networks_search(search)
+    elif viewnid:
+        util.networks_get_by_id(viewnid)
+    elif name2id:
+        netids = util.network_name_to_ids(name2id)
+        if len(netids):
+            print(netids)
+        else:
+            print('No network names match: {}'.format(name2id))
+    elif addcidr:
+        (cidr, netname) = addcidr
+        if ctx.obj['DEBUG']:
+            click.echo(' adding cidr: {} to network: {}'.format(cidr, netname))
+        util.networks_add_cidr(cidr, netname)
+    elif delcidr:
+        (cidr, netname) = delcidr
+        if ctx.obj['DEBUG']:
+            click.echo(' removing cidr: {} to network: {}'.format(cidr, netname))
+        util.networks_del_cidr(cidr, netname)
 
 @run.command()
 @pass_context

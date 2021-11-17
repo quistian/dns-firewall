@@ -15,10 +15,73 @@ config.Logger = Logger
 
 # DNS Firewall object schemas
 
+# Networks object schema
+
 '''
-Profile:
 
 {
+'hasNext': False,
+'hasPrevious': False,
+'page': 0,
+'items': [
+    {
+    'id': 9904,
+    'name': 'dns1',
+    'subscriberId': 'dns1-f6850bd8-6fa2-44a3-81b9-9cd101c0c46d',
+    'timeZone': 'America/Toronto',
+    'customerId': 171,
+    'ipAddresses': [ {
+        'id': 22618, 
+        'address': '128.100.100.128',
+        'type': 'V4',
+        'networkId': 9904,
+        'dynamicSourceAddressId': None,
+        'childIPV4': None,
+        'childIPV6': None,
+        'lastChecked': None }],
+    'customerName': 'university of toronto',
+    'profileId': 14739,
+    'profileName': 'dns1-profile',
+    'blockPageId': 173,
+    'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': None,
+    'reportFrequency': 'NEVER'
+    },
+    ...
+    {
+    'id': 10181,
+    'name': 'utsc',
+    'subscriberId': 'utsc-173f340a-a4a5-4514-a00c-028de99ca7ea',
+    'timeZone': 'America/Toronto',
+    'customerId': 171,
+    'ipAddresses': [
+        {
+        'id': 23134,
+        'address': '142.1.166.107', 'type': 'V4', 'networkId': 10181,
+        'dynamicSourceAddressId': None, 'childIPV4': None, 'childIPV6': None,
+        'lastChecked': None
+        }
+        ],
+    'customerName': 'university of toronto',
+    'profileId': 15179,
+    'profileName': 'utsc-profile',
+    'blockPageId': 173, 'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': None,
+    'reportFrequency': 'DAILY'
+    }
+    ],
+'totalRowCount': 7,
+'totalPageCount': 1,
+'currentRowCount': 7
+}
+
+'''
+
+
+'''
+Profile schema:
+
+profile_template = {
     'customerId': 171,
     'customerName': 'university of toronto',
     'data': {
@@ -40,6 +103,33 @@ Profile:
     'id': 15236,
     'name': 'template-profile',
     'networkIdNames': {'10213': 'template'}
+}
+
+network_template = {
+    'id': 10213,
+    'name': 'template',
+    'subscriberId': 'template-0347da10-ded1-4e76-a91a-0ae33ffcb035',
+    'timeZone': 'America/Toronto',
+    'customerId': 171,
+    'ipAddresses': [
+        {
+        'id': 23206,
+        'address': '128.100.0.0/24',
+        'type': 'V4',
+        'networkId': 10213,
+        'dynamicSourceAddressId': None,
+        'childIPV4': None,
+        'childIPV6': None,
+        'lastChecked': None
+        }
+    ],
+    'customerName': 'university of toronto',
+    'profileId': 15236,
+    'profileName': 'template-profile',
+    'blockPageId': 173,
+    'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': [],
+    'reportFrequency': 'NEVER'
 }
 
 '''
@@ -198,6 +288,11 @@ def profile_exists(pid):
         return True
     else:
         return False
+'''
+
+A profile can be created with no networks associated.
+
+'''
 
 def profile_create(pname):
     toks = pname.split('-')
@@ -221,24 +316,201 @@ def profile_create(pname):
         prof = new
     return prof
 
+'''
+
+A profile can not be deleted before it has all networks removed
+
+'''
+
 def profile_delete(pname):
     toks = pname.split('-')
     if toks[-1] != 'profile':
         cname = pname + '-profile'
     else:
         cname = pname
-    ids = profile_name_to_ids(cname)
-    if len(ids):
-        api.delete_profile(ids[0])
+    pids = profile_name_to_ids(cname)
+    l = len(pids)
+    if l == 1:
+        pid = pids[0]
+        prof = api.get_profile_by_id(pid)
+        netids = prof['networkIdNames']
+        if len(netids):
+            for k in netids:
+                netname = netids[k]
+                netid = k
+            print('Cannot delete profile: {} as it still contains:'.format(cname))
+            net = api.get_network_by_id(netid)
+            network_pretty_print(net)
+        else:
+            api.delete_profile(pid)
     else:
         print('Profile {} does not exist'.format(cname))
 
-def pretty_print(profile):
+'''
+Search for all networks matching a string
+'''
+
+def networks_search(search_str):
+    fn = 'util.networks_search'
+    vals = api.search_networks(name=search_str)
+    for net in vals['items']:
+        network_pretty_print(net)
+
+def networks_get_by_id(netid):
+    fn = 'util.networks_get_by_id'
+    vals = api.get_network_by_id(netid)
+    if vals:
+        network_pretty_print(vals)
+    else:
+        print('No network matching Id: {}'.format(netid))
+
+def network_name_to_ids(netname):
+    fn = util.network_name_to_ids
+    vals = api.search_networks(netname)
+    nets = vals['items']
+    netpids = []
+    for net in nets:
+        netpids.append(net['id'])
+    return netpids
+
+def networks_add_cidr(cidr, netname):
+    nets = api.search_networks(name=netname)
+    items = nets['items']
+    l = len(items)
+    if l == 1:
+        netid = items[0]['id']
+        item = api.get_network_by_id(netid)
+        netname = item['name']
+        net = {
+            'id': 0,
+            'address': cidr,
+            'type': 'V4',
+            'networkId': netid,
+            'dynamicSourceAddressId': None,
+            'childIPV4': None,
+            'childIPV6': None,
+            'lastChecked': None
+        }
+        if net not in item['ipAddresses']:
+            item['ipAddresses'].append(net)
+            new = api.put_network(netid, item)
+            print('Added address {} to network {}'.format(cidr, netname))
+        else:
+            print('network {} already contains {}'.format(netname,cidr))
+    elif l == 0:
+        print('There were no network names matching: {}'.format(netname))
+    else:
+        print('There were more than 1 network names which matched: {}'.format(netname))
+    return new
+
+def networks_del_cidr(cidr, netname):
+    nets = api.search_networks(netname)
+    items = nets['items']
+    l = len(items)
+    if l == 1:
+        netid = items[0]['id']
+# this is perhaps not needed if inital search yields the same data
+        item = api.get_network_by_id(netid)
+        nname = item['name']
+        ipaddrs = item['ipAddresses']
+        changed = False
+        for ipaddr in ipaddrs:
+            if ipaddr['address'] == cidr:
+                changed = True
+                item['ipAddresses'].remove(ipaddr)
+        if changed:
+            print('Deleted {} from network {}'.format(cidr, netname))
+            new = api.put_network(netid, item)
+        else:
+            print('Address {} is not part of network {}'.format(cidr, netname))
+    elif l == 0:
+        print('There were no networks names matching: {}'.format(netname))
+    else:
+        print('There were more than 1 networks  which matched: {}'.format(netname))
+    
+def network_delete(netname):
+    ids = network_name_to_ids(netname)
+    if len(ids) == 1:
+        val = api.delete_network(ids[0])
+    else:
+        print('Profile {} does not exist'.format(cname))
+
+'''
+The required fields are:
+    name
+    timezone
+    network/ipaddr
+
+Optional:
+    block_page
+
+Creating a new network will create a profile of the same name
+
+'''
+
+NetWork_Template = {
+    'id': 0,
+    'name': 'temp',
+    'timeZone': 'America/Toronto',
+    'ipAddresses': [ {
+        'id': 23134,
+        'address': '142.1.166.107',
+        'type': 'V4',
+        'networkId': 10181,
+        'dynamicSourceAddressId': None,
+        'childIPV4': None,
+        'childIPV6': None,
+        'lastChecked': None
+    } ],
+    'customerName': 'university of toronto',
+    'profileId': 15179,
+    'profileName': 'utsc-profile',
+    'blockPageId': 173,
+    'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': None,
+}
+
+def network_create(netname):
+    ids = network_name_to_ids(netname)
+    if len(ids):
+        print('Network {} already exists'.format(netname))
+        net = api.get_profile_by_id(ids[0])
+    else:
+        ids = network_name_to_ids('template-profile')
+        prof = api.get_profile_by_id(ids[0])
+        prof['name'] = cname
+        prof['id'] = '0'
+        prof['networkIdNames'] =  {}
+        new = api.create_profile(prof)
+        if config.Debug:
+            pprint(new)
+        prof = new
+    return prof
+    
+def network_pretty_print(net):
+    fn = 'util.network_pretty_print'
+    name = net['name']
+    nid = net['id']
+    profile = net['profileName']
+    blockpage = net['blockPageName']
+    print('Network:')
+    print('    Name: {}'.format(name))
+    print('    Id: {}'.format(nid))
+    print('    Associated Profile: {}'.format(profile))
+    print('    Associated BlockPage: {}'.format(blockpage))
+    print('    Addresses:')
+    for addr in net['ipAddresses']:
+        print('        address {}'.format(addr['address']))
+        print('        addressId {}'.format(addr['id']))
+
+def profile_pretty_print(profile):
     name = profile['name']
     pid = profile['id']
+    networks = profile['networkIdNames']
     print('Profile:')
     print('    Name: {}'.format(name))
     print('    Id: {}'.format(pid))
+    print('    Networks: {}'.format(networks))
     print('    Block List:')
     blist = profile['data']['urlFilter']['blackList']
     for node in blist:
@@ -256,12 +528,10 @@ def test_functions():
 # working
     api.get_account_info()
     api.get_timezones()
-    api.get_networks(net_name='dns8')
     api.get_threatfeeds()
     api.domainlookup('cira.ca')
     api.get_blockpages()
     api.get_profiles_filterblocks()
-    api.search_profiles('dns1')
     api.get_profile_by_id(14739)
 
 

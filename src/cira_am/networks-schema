@@ -1,0 +1,55 @@
+{
+'hasNext': False,
+'hasPrevious': False,
+'page': 0,
+'items': [
+    {
+    'id': 9904,
+    'name': 'dns1',
+    'subscriberId': 'dns1-f6850bd8-6fa2-44a3-81b9-9cd101c0c46d',
+    'timeZone': 'America/Toronto',
+    'customerId': 171,
+    'ipAddresses': [ {
+        'id': 22618, 
+        'address': '128.100.100.128',
+        'type': 'V4',
+        'networkId': 9904,
+        'dynamicSourceAddressId': None,
+        'childIPV4': None,
+        'childIPV6': None,
+        'lastChecked': None }],
+    'customerName': 'university of toronto',
+    'profileId': 14739,
+    'profileName': 'dns1-profile',
+    'blockPageId': 173,
+    'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': None,
+    'reportFrequency': 'NEVER'
+    },
+    etc...
+    {
+    'id': 10181,
+    'name': 'utsc',
+    'subscriberId': 'utsc-173f340a-a4a5-4514-a00c-028de99ca7ea',
+    'timeZone': 'America/Toronto',
+    'customerId': 171,
+    'ipAddresses': [
+        {
+        'id': 23134,
+        'address': '142.1.166.107', 'type': 'V4', 'networkId': 10181,
+        'dynamicSourceAddressId': None, 'childIPV4': None, 'childIPV6': None,
+        'lastChecked': None
+        }
+        ],
+    'customerName': 'university of toronto',
+    'profileId': 15179,
+    'profileName': 'utsc-profile',
+    'blockPageId': 173, 'blockPageName': 'utoronto_blockpage-155',
+    'reportEmails': None,
+    'reportFrequency': 'DAILY'
+    }
+    ],
+'totalRowCount': 7,
+'totalPageCount': 1,
+'currentRowCount': 7
+}
