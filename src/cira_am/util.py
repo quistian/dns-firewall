@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+import json
+import logging
 import os
 import sys
-import logging
+import time
+
 from pprint import pprint
+from dotenv import load_dotenv
 
 from cira_am import config
 from cira_am import api
@@ -152,8 +156,10 @@ fetch_tokens response
 '''
 
 def dnsfirewall_init():
-    fn = 'dnsfirewall_init'
+    fn = 'util.dnsfirewall_init'
+    tokf = os.environ['HOME'] + '/.dns-firewall-tokens.json'
 
+    load_dotenv()
     creds = {
         'username': os.environ['CLIENT_UID'],
         'password': os.environ['CLIENT_PW'],
@@ -161,14 +167,46 @@ def dnsfirewall_init():
         'client_secret': os.environ['SECRET_KEY'],
         'grant_type': 'password'
     }
-    
-    tokens = api.fetch_tokens(creds)
-    config.AuthHeader['Authorization'] = tokens['token_type'] + ' ' + tokens['access_token']
-    config.GetAuthHeader['Authorization'] = tokens['token_type'] + ' ' + tokens['access_token']
-    config.CustomerName = creds['client_id']
-    
-    if config.Debug:
-        Logger.debug('{}: Authorization Header: {}'.format(fn, config.AuthHeader))
+
+    if os.path.exists(tokf):
+        with open(tokf, 'r') as inf:
+            ftokens = json.load(inf)
+        token_life = ftokens['expires_in']
+        refresh_life = ftokens['refresh_expires_in']
+        age = int(time.time() - os.path.getmtime(tokf))
+        if age > refresh_life:
+            if config.Debug:
+                print('fn: {} tokens age {} secs, too old for refresh, getting new tokens'.format(fn, age))
+            tokens = api.fetch_fresh_tokens(creds)
+            config.AuthHeader['Authorization'] = tokens['token_type'] + ' ' + tokens['access_token']
+            with open(tokf, 'w') as outf:
+                outf.write(json.dumps(tokens, indent=4))
+        elif age < token_life:
+            if config.Debug:
+                print('fn: {} access token age: {} secs, fetching from file: {}'.format(fn, age, tokf))
+            config.AuthHeader['Authorization'] = ftokens['token_type'] + ' ' + ftokens['access_token']
+        else:
+            if config.Debug:
+                print('fn: {} access token, age: {} secs,  has expired, being refreshed from {}'.format(fn, age, tokf))
+            refresh_creds = {
+                    'client_id': creds['client_id'],
+                    'client_secret': creds['client_secret'],
+                    'grant_type': 'refresh_token',
+                    'refresh_token': ftokens['refresh_token']
+            }
+            tokens = api.fetch_refresh_tokens(refresh_creds)
+            config.AuthHeader['Authorization'] = tokens['token_type'] + ' ' + tokens['access_token']
+            with open(tokf, 'w') as outf:
+                outf.write(json.dumps(tokens, indent=4))
+    else:
+        tokens = api.fetch_fresh_tokens(creds)
+        config.AuthHeader['Authorization'] = tokens['token_type'] + ' ' + tokens['access_token']
+        with open(tokf, 'w') as outf:
+            outf.write(json.dumps(tokens, indent=4))
+
+#        Logger.debug('{}: Authorization Header: {}'.format(fn, config.AuthHeader))
+#   config.CustomerName = creds['client_id']
+
 
 '''
 Add a URL to a Profile, blacklist and blocklist referenced by Profile Name
@@ -365,7 +403,7 @@ def networks_get_by_id(netid):
         print('No network matching Id: {}'.format(netid))
 
 def network_name_to_ids(netname):
-    fn = util.network_name_to_ids
+    fn = 'util.network_name_to_ids'
     vals = api.search_networks(netname)
     nets = vals['items']
     netpids = []
@@ -428,12 +466,6 @@ def networks_del_cidr(cidr, netname):
     else:
         print('There were more than 1 networks  which matched: {}'.format(netname))
     
-def network_delete(netname):
-    ids = network_name_to_ids(netname)
-    if len(ids) == 1:
-        val = api.delete_network(ids[0])
-    else:
-        print('Profile {} does not exist'.format(cname))
 
 '''
 The required fields are:
@@ -448,44 +480,60 @@ Creating a new network will create a profile of the same name
 
 '''
 
-NetWork_Template = {
+Network_Template = {
     'id': 0,
     'name': 'temp',
     'timeZone': 'America/Toronto',
-    'ipAddresses': [ {
-        'id': 23134,
-        'address': '142.1.166.107',
-        'type': 'V4',
-        'networkId': 10181,
-        'dynamicSourceAddressId': None,
-        'childIPV4': None,
-        'childIPV6': None,
-        'lastChecked': None
-    } ],
-    'customerName': 'university of toronto',
-    'profileId': 15179,
-    'profileName': 'utsc-profile',
+    'ipAddresses': [
+         {
+            'address': '128.0.{}.{}'.format(*__import__('random').sample(range(0,255),2)),
+            'childIPV4': None,
+            'childIPV6': None,
+            'dynamicSourceAddressId': None,
+            'id': 23206,
+            'lastChecked': None,
+            'networkId': 10213,
+            'type': 'V4',
+        }
+    ],
+    'profileId': 0,
     'blockPageId': 173,
     'blockPageName': 'utoronto_blockpage-155',
-    'reportEmails': None,
+    'reportEmails': [ ],
+    'reportFrequency': 'NEVER',
 }
+
+'''
+
+Networks can not be created in isolation.
+They need to be associated with a profile
+
+'''
 
 def network_create(netname):
     ids = network_name_to_ids(netname)
-    if len(ids):
+    l = len(ids)
+    if l == 1:
         print('Network {} already exists'.format(netname))
-        net = api.get_profile_by_id(ids[0])
-    else:
-        ids = network_name_to_ids('template-profile')
-        prof = api.get_profile_by_id(ids[0])
-        prof['name'] = cname
-        prof['id'] = '0'
-        prof['networkIdNames'] =  {}
-        new = api.create_profile(prof)
+        net = api.get_network_by_id(ids[0])
+    elif l == 0:
+        tempnet = Network_Template
+        tempnet['name'] = netname
+        tempnet['networkIdNames'] =  {}
+        new = api.create_network(tempnet)
         if config.Debug:
             pprint(new)
-        prof = new
-    return prof
+        net = new
+    return net
+
+def network_delete(netname):
+    ids = network_name_to_ids(netname)
+    l = len(ids)
+    if l == 1:
+        val = api.delete_network(ids[0])
+    elif l == 0:
+        print('Network {} does not exist'.format(netname))
+    return val
     
 def network_pretty_print(net):
     fn = 'util.network_pretty_print'

@@ -24,14 +24,19 @@ from pprint import pprint
 from cira_am import config
 
 def generic_request(method, url, headers={}, params={}, data={}):
-    fn = 'generic_request'
+    fn = 'api.generic_request'
     if config.Debug:
         print('func: {} method: {} url: {} \n'.format(fn, method, url))
-
     try:
-        resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
+        if method == 'DELETE':
+            resp = requests.delete(url, headers=headers)
+        else:
+            resp = requests.request(method, url, headers=headers, params=params, data=data, timeout=5)
         resp.raise_for_status()
-        return resp.json()
+        if resp.status_code == 204:
+            return resp.text
+        else:
+            return resp.json()
     except requests.exceptions.HTTPError as errh:
         print(errh)
         print('Request Text: ', resp.text)
@@ -46,6 +51,8 @@ def generic_request(method, url, headers={}, params={}, data={}):
         print(err)
         exit()
 
+# Authentication Token Routines
+
 '''
 
 curl -X POST \
@@ -59,25 +66,59 @@ https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-conne
 
 resp =
 {
-"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqMD...",
-"expires_in": 300,
-"refresh_expires_in": 1800,
-"refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI4YW...",
-"token_type":"Bearer",
-"not-before-policy":0,
-"session_state":"0e82a3e6-1160-42c5-b7d0-8271e32782e3",
-"scope":"Customer_API_Client_Template"
+    'access_token': 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJqMD...',
+    'expires_in': 300, // Access tokens are good for 5 minutes
+    'not-before-policy':0,
+    'refresh_expires_in': 1800, // Refresh tokens are good for 30 minutes
+    'refresh_token': 'eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI4YW...',
+    'scope':'Customer_API_Client_Template'
+    'token_type':'Bearer',
+    'session_state':'0e82a3e6-1160-42c5-b7d0-8271e32782e3',
 }
 
 '''
 
-def fetch_tokens(creds):
-    fn = 'fetch_tokens'
-    URL = 'https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token'
+def fetch_fresh_tokens(creds):
+    fn = 'api.fetch_fresh_tokens'
+    URL = config.AuthURL
 
     vals = generic_request('POST', URL, data=creds)
 #   resp = requests.post(URL,  data=creds)
 #   vals = resp.json()
+    return vals
+
+'''
+
+curl –X POST -d \
+    "client_id=<your customer name>&
+    client_secret=<clientsecret>
+    grant_type=refresh_token
+    refresh_token=<refresh_token>" \
+    https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token
+
+Response:
+
+{
+'access_token': '<very long string>',
+'expires_in': 300, // Access tokens are good for 5 minutes
+'refresh_expires_in': 1800, // Refresh tokens are good for 30 minutes
+'refresh_token': '<very long string>',
+'token_type': 'bearer',
+'id_token': '<very long long string>'
+'not-before-policy': <a Unix timestamp>,
+'session_state': '<session id>'
+}
+
+'''
+
+def fetch_refresh_tokens(creds):
+    fn = 'api.refresh_tokens'
+    URL = config.AuthURL
+    vals = generic_request('POST', URL, data=creds)
+    if config.Debug:
+        print('fn: {} refreshing tokens'.format(fn))
+        print('Input creds data: {}'.format(creds))
+        print('Refresh response: {}'.format(vals))
     return vals
 
 # Threat Feeds Section
@@ -177,10 +218,10 @@ def get_customer_by_id(id):
     fn = 'get_customer_by_id'
     URL = config.BaseURL + '/customers/' + str(id)
 #   vals = generic_request('GET', URL, headers=config.AuthHeader)
-    resp = requests.get(URL, headers=config.GetAuthHeader)
+    resp = requests.get(URL, headers=config.AuthHeader)
     vals = resp.json()
     if config.Debug:
-        print('func: {} header used: {}'.format(fn, config.GetAuthHeader))
+        print('func: {} header used: {}'.format(fn, config.AuthHeader))
         print('func: {} URL used: {}'.format(fn, resp.url))
         print('func: {} Response text: {}'.format(fn, resp.text))
         print('func: {} return data: {}'.format(fn, vals))

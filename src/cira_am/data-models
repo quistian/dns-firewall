@@ -1,0 +1,110 @@
+Network Data Structure
+description:	Represents a network in the system
+{
+    id	            integer($int64) The unique identifier in the system for the entity
+    name	        string Network name
+    subscriberId	string Subscriber id
+    timeZone	    string Time zone
+    customerId	    integer($int64) Optional customer id
+    ipAddresses	    [ IpAddressTO{...} ]  A list of Adresses
+    customerName	string Optional customer name
+    profileId	    integer($int64) Optional profile id, automatically created on network creation
+    profileName	    string Optional profile name, automatically created on network creation
+    blockPageId	    integer($int64) Optional block page id
+    reportEmails	[...] list of Email Address data
+    reportFrequency	string Optional email report frequency  [ NEVER, DAILY, WEEKLY, MONTHLY ]
+}
+
+IpAddress Data Structure
+description:	Represents an IP address in the system
+{
+    id	integer($int64) The unique identifier in the system for the entity
+    address	                string IP address
+    type	                string IP type (V4/V6/..) [ V4, V6, DYN ]
+    networkId	            integer($int64) Network ID the IP is linked to
+    dynamicSourceAddressId	integer($int64) ID of dynamic source address
+    childIPV4*	            string
+    childIPV6*	            string
+    lastChecked*	        string  ($date-time)
+}
+
+Email Address Data Structure
+description:	Represents an email in the network
+{
+    id	            integer($int64) The unique identifier in the system for the entity
+    address	        string Email address
+    reportLanguage	string Email report language type [EN,  FR]
+    networkId	    integer($int64) Network ID the email is linked to
+}
+
+
+Profile Data Structure
+description:	Represents a profile in the system
+{
+    id	            integer($int64) The unique identifier in the system for the entity
+    name	        string Profile name
+    customerId	    integer($int64) Optional customer id
+    customerName	string Optional customer name
+    data	        ProfileData{...}
+    networkIdNames	{...}
+    feedSubscriptions	[...]
+}
+
+Profile Data description:	Represents the data of profiles in the system
+{
+    temporarilyDisabled	boolean Optional option for temporarily disabling filter
+    internetSecurity	Represents the internet security of profiles in the system
+    {
+        safeSearchServices	 Optional map of toggles for safe search services
+        {
+        < * >:	boolean
+        }
+        enableMalwareProtection	boolean Optional toggle for enabling malware protection
+    }
+    webFilterLevel	    Represents the filtering level of profiles in the system
+    {
+        level	string  one of [ NONE, LIGHT, MEDIUM, STRICT, CUSTOM ]
+        blockList list of blocked categories
+        [
+        string, string
+        ]
+    }
+    internetOffSchedule Represents the off-hours internet schedule data of profiles in the system
+    {
+        enabled	boolean Optional toggle for enabling off-hours internet schedule
+        scheduless Optional list of schedules for off-hours internet
+        [
+            Schedule description:	Represents the schedule data of profiles in the system
+            {
+                day	integer($int32) Day of the schedule
+                startTime	string Start time of the schedule
+                endTime	string End time of the schedule
+            }
+        ]
+    }
+    contentRestriction	ContentRestriction description:	Represents the content restriction schedule of profiles in the system
+    {
+        enabled	boolean Optional toggle to enable content restriction schedule
+        schedules	 Optional list of days and times content is restricted
+        [
+            Schedule{...}
+        ]
+        blockList	Optional list of blocked categories during scheduled hours
+        [ string, string, string]
+    }
+    urlFilter	URLFilter{ description:	Represents the filtered URLs of profiles in the system
+    {
+        allowList	[...]
+        blockList	[...]
+        whiteList	[...]
+        blackList	[...]
+    }
+    domainOverride	DomainOverride description:	Represents the domain overrides of profiles in the system
+    {
+        allowList	[...]
+    }
+schedules
+    contentRestriction	ContentRestriction{...}
+    urlFilter	        URLFilter{...}
+    domainOverride	    DomainOverride{...}
+}

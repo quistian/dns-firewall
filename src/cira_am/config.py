@@ -9,13 +9,13 @@ Global Variables convention:
 
 '''
 
-
 Debug = True
 Silent = True
+Verbose = False
+
 CustomerName = 'customer_name'
 
 AuthHeader = {'Content-Type': 'application/json'}
-GetAuthHeader = {}
 BaseURL = "https://firewall-api.d-zone.ca"
-BaseAuthURL = "https://firewall-auth.d-zone.ca"
+AuthURL = 'https://firewall-auth.d-zone.ca/auth/realms/D-ZoneFireWall/protocol/openid-connect/token'
 
